@@ -12,14 +12,20 @@ export const SearchBooksPage = () => {
   const [booksPerPage] = useState(5);
   const [totalAmountOfBooks, setTotalAmountOfBooks] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
+  const [search, setSearch] = useState("");
+  const [searchUrl, setSearchUrl] = useState("");
 
   useEffect(() => {
     const fetchBooks = async () => {
       const baseUrl: string = "http://localhost:8080/api/books";
 
-      const url: string = `${baseUrl}?page=${
-        currentPage - 1
-      }&size=${booksPerPage}`;
+      let url: string = '';
+
+      if (searchUrl === "") {
+        url = `${baseUrl}?page=${currentPage - 1}&size=${booksPerPage}`;
+      } else {
+        url = baseUrl + searchUrl;
+      }
 
       const response = await fetch(url);
 
@@ -56,9 +62,9 @@ export const SearchBooksPage = () => {
     fetchBooks().catch((error: any) => {
       setIsLoading(false);
       setHttpError(error.message);
-    })
+    });
     window.scrollTo(0, 0);
-  }, [currentPage]);
+  }, [currentPage, searchUrl]);
 
   if (isLoading) {
     return <SpinnerLoading />;
@@ -72,13 +78,21 @@ export const SearchBooksPage = () => {
     );
   }
 
+  const searchHandleChange = () => {
+    if(search === ''){
+        setSearchUrl('');
+    } else {
+        setSearchUrl(`/search/findByTitleContaining?title=${search}&page=0&size=${booksPerPage}`)
+    }
+}
+
   const indexOfLastBook: number = currentPage * booksPerPage;
   const indexOfFirstBook: number = indexOfLastBook - booksPerPage;
   let lastItem =
     booksPerPage * currentPage <= totalAmountOfBooks
       ? booksPerPage * currentPage
       : totalAmountOfBooks;
-    
+
   const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
 
   return (
@@ -93,8 +107,9 @@ export const SearchBooksPage = () => {
                   type="search"
                   placeholder="Search"
                   aria-labelledby="Search"
+                  onChange={e => setSearch(e.target.value)}
                 />
-                <button className="btn btn-outline-success">Search</button>
+                <button className="btn btn-outline-success" onClick={() => searchHandleChange()}>Search</button>
               </div>
             </div>
             <div className="col-4">
@@ -144,13 +159,19 @@ export const SearchBooksPage = () => {
           <div className="mt-3">
             <h5>Number of results: ({totalAmountOfBooks})</h5>
           </div>
-          <p>{indexOfFirstBook + 1} to {lastItem} of {totalAmountOfBooks} items:</p>
+          <p>
+            {indexOfFirstBook + 1} to {lastItem} of {totalAmountOfBooks} items:
+          </p>
           {books.map((book) => (
             <SearchBook book={book} key={book.id} />
           ))}
-          {totalPages > 1 && 
-                <Pagination currentPage={currentPage} totalPages={totalPages} paginate={paginate}/>
-            }
+          {totalPages > 1 && (
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              paginate={paginate}
+            />
+          )}
         </div>
       </div>
     </div>
